@@ -1,0 +1,279 @@
+{
+    "info": {
+        "_postman_id": "b5e2c8e9-5b1d-4c3e-8c7f-d6f3e5f3a8b7",
+        "name": "CauseBag API",
+        "description": "Collection for testing the CauseBag API endpoints",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Register User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Test User\",\n    \"mobNumber\": \"9876543210\",\n    \"email\": \"testuser@example.com\",\n    \"password\": \"Password123\",\n    \"role\": \"causePoster\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "register"
+                            ]
+                        },
+                        "description": "Register a new user."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Login User",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = JSON.parse(responseBody);",
+                                    "if (jsonData && jsonData.data && jsonData.data.token) {",
+                                    "    pm.environment.set(\"authToken\", jsonData.data.token);",
+                                    "    pm.environment.set(\"userId\", jsonData.data._id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"testuser@example.com\",\n    \"password\": \"Password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "login"
+                            ]
+                        },
+                        "description": "Login and get an authentication token."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Current User",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{authToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/me",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "me"
+                            ]
+                        },
+                        "description": "Get the profile of the currently authenticated user."
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Endpoints for user authentication and profile management."
+        },
+        {
+            "name": "Causes",
+            "item": [
+                {
+                    "name": "Create Cause",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = JSON.parse(responseBody);",
+                                    "if (jsonData && jsonData.data && jsonData.data.causeID) {",
+                                    "    pm.environment.set(\"causeId\", jsonData.data.causeID);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{authToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"Clean Water Initiative\",\n    \"description\": \"Providing clean water to rural communities\",\n    \"qty\": 100,\n    \"singleItemPrice\": 25,\n    \"category\": \"Environment\",\n    \"impactLevel\": \"High\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/causes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "causes"
+                            ]
+                        },
+                        "description": "Create a new cause (requires CAUSE_POSTER role)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get User Causes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{authToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/causes/{{userId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "causes",
+                                "{{userId}}"
+                            ]
+                        },
+                        "description": "Get all causes created by a specific user."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get All Approved Causes",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/causes?category=Environment&page=1&limit=10",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "causes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "category",
+                                    "value": "Environment",
+                                    "description": "Filter by category (optional)"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number (optional)"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10",
+                                    "description": "Results per page (optional)"
+                                }
+                            ]
+                        },
+                        "description": "Get all approved causes with optional filtering and pagination."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Shareable Cause",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/cause/share/{{causeId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "cause",
+                                "share",
+                                "{{causeId}}"
+                            ]
+                        },
+                        "description": "Get a shareable link and QR code for a specific cause."
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Endpoints for managing causes."
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:5000",
+            "type": "string"
+        }
+    ]
+}
