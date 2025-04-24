@@ -3,12 +3,8 @@ const { successResponse, errorResponse } = require('../utils/response');
 const QRCode = require('qrcode');
 const { User } = require('../models/AuthUser');
 
-/**
- * @desc    Create a new cause
- * @route   POST /api/v1/causes
- * @access  Private (CAUSE_POSTER)
- */
-exports.createCause = async (req, res) => {
+
+createCause = async (req, res) => {
     try {
         // Get data from request body
         const {
@@ -47,12 +43,8 @@ exports.createCause = async (req, res) => {
     }
 };
 
-/**
- * @desc    Get all causes created by a specific user
- * @route   GET /api/v1/causes/:userId
- * @access  Private
- */
-exports.getUserCauses = async (req, res) => {
+
+getUserCauses = async (req, res) => {
     try {
         const { userId } = req.params;
 
@@ -92,12 +84,8 @@ exports.getUserCauses = async (req, res) => {
     }
 };
 
-/**
- * @desc    Get all approved causes (for public browsing)
- * @route   GET /api/v1/causes
- * @access  Public
- */
-exports.getAllApprovedCauses = async (req, res) => {
+
+getAllApprovedCauses = async (req, res) => {
     try {
         // Add filtering, sorting, and pagination options
         const { category, sort = '-createdAt', page = 1, limit = 10 } = req.query;
@@ -157,12 +145,8 @@ exports.getAllApprovedCauses = async (req, res) => {
     }
 };
 
-/**
- * @desc    Generate a shareable link and QR code for a cause
- * @route   GET /api/v1/cause/share/:causeId
- * @access  Public
- */
-exports.getShareableCause = async (req, res) => {
+
+getShareableCause = async (req, res) => {
     try {
         const { causeId } = req.params;
 
@@ -245,4 +229,13 @@ exports.getShareableCause = async (req, res) => {
         console.error('Share cause error:', error);
         return errorResponse(res, 500, 'Error generating share link', error.message);
     }
-}; 
+};
+
+
+module.exports = {
+    createCause,
+    getUserCauses,
+    getAllApprovedCauses,
+    getShareableCause
+};
+
