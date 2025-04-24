@@ -3,9 +3,9 @@ const { v4: uuidv4 } = require('uuid');
 
 // Define status constants
 const STATUS = {
-    PENDING: 'pending',
-    APPROVED: 'approved',
-    REJECTED: 'rejected'
+    PENDING: 'PENDING',
+    APPROVED: 'APPROVED',
+    REJECTED: 'REJECTED'
 };
 
 // Cause Schema

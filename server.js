@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const morgan = require('morgan');
 const authRoutes = require('./routes/auth');
 const causeRoutes = require('./routes/cause');
+const sponsorRoutes = require('./routes/sponsor');
 const { errorHandler, notFound } = require('./middlewares/errorHandler');
 
 // Uncaught exception handler
@@ -23,6 +24,7 @@ app.use(morgan('dev'));
 // Routes
 app.use('/api/v1', authRoutes);
 app.use('/api/v1', causeRoutes);
+app.use('/api/v1/sponsor', sponsorRoutes);
 
 // Error handling middlewares
 app.use(notFound);
