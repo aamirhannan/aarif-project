@@ -26,6 +26,7 @@ const authUserSchema = new mongoose.Schema({
     },
     loginComplete: { type: Boolean, default: false },
     aadhaarVerified: { type: Boolean, default: false },
+    mobileVerified: { type: Boolean, default: false }, // Added field for mobile verification
 }, { timestamps: true });
 
 const User = mongoose.model('User', authUserSchema);

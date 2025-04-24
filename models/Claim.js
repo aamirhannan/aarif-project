@@ -1,12 +1,7 @@
 const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
+const { STATUS } = require('../utils/utilFunctions');
 
-// Define status constants
-const CLAIM_STATUS = {
-    PENDING: 'PENDING',
-    COMPLETED: 'COMPLETED',
-    REJECTED: 'REJECTED'
-};
 
 // Claim Schema
 const claimSchema = new mongoose.Schema({
@@ -42,7 +37,7 @@ const claimSchema = new mongoose.Schema({
     // Type of identifier used (aadhaar or phone)
     identifierType: {
         type: String,
-        enum: ['AADHAAR', 'PHONE'],
+        enum: ['AADHAAR', 'PHONE', 'EMAIL', 'USER_ID'],
         required: true
     },
     // Optional location data for analytics
@@ -57,8 +52,8 @@ const claimSchema = new mongoose.Schema({
     // Status of the claim
     status: {
         type: String,
-        enum: Object.values(CLAIM_STATUS),
-        default: CLAIM_STATUS.COMPLETED
+        enum: Object.values(STATUS),
+        default: STATUS.COMPLETED
     },
     // Optional notes or feedback from the claimant
     notes: {
@@ -75,6 +70,5 @@ claimSchema.index({ userID: 1 });
 const Claim = mongoose.model('Claim', claimSchema);
 
 module.exports = {
-    Claim,
-    CLAIM_STATUS
+    Claim
 }; 

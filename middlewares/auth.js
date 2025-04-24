@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models/AuthUser');
+const { User, ROLES } = require('../models/AuthUser');
 const { errorResponse } = require('../utils/response');
 
 /**
@@ -64,9 +64,25 @@ exports.authorize = (...roles) => {
         }
 
         if (!roles.includes(req.user.role)) {
-            return errorResponse(res, 403, `User role '${req.user.role}' is not authorized to access this route`);
+            return errorResponse(res, 403, `Access denied. Role '${req.user.role}' is not authorized to access this resource. Required role(s): ${roles.join(', ')}`);
         }
 
         next();
     };
 };
+
+/**
+ * Role-specific middleware helpers for cleaner route definitions
+ */
+
+// Allow access to only CAUSE_POSTER role
+exports.causeCreatorOnly = (req, res, next) => exports.authorize(ROLES.CAUSE_POSTER)(req, res, next);
+
+// Allow access to only SPONSOR role
+exports.sponsorOnly = (req, res, next) => exports.authorize(ROLES.SPONSOR)(req, res, next);
+
+// Allow access to only PUBLIC role
+exports.publicOnly = (req, res, next) => exports.authorize(ROLES.PUBLIC)(req, res, next);
+
+// Allow access to both SPONSOR and PUBLIC roles
+exports.sponsorOrPublic = (req, res, next) => exports.authorize(ROLES.SPONSOR, ROLES.PUBLIC)(req, res, next);

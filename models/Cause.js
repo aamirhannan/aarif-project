@@ -1,12 +1,6 @@
 const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
-
-// Define status constants
-const STATUS = {
-    PENDING: 'PENDING',
-    APPROVED: 'APPROVED',
-    REJECTED: 'REJECTED'
-};
+const { STATUS } = require('../utils/utilFunctions');
 
 // Cause Schema
 const causeSchema = new mongoose.Schema({

@@ -2,6 +2,7 @@ const { Cause } = require('../models/Cause');
 const { Sponsorship } = require('../models/Sponsorship');
 const { User } = require('../models/AuthUser');
 const { successResponse, errorResponse } = require('../utils/response');
+const { STATUS } = require('../utils/utilFunctions');
 
 /**
  * Get causes with optional filters for category and impact
@@ -14,7 +15,7 @@ exports.getCauses = async (req, res) => {
         const { category, impact, page = 1, limit = 10 } = req.query;
 
         // Build query with approved status
-        const query = { status: 'approved' };
+        const query = { status: STATUS.APPROVED };
 
         // Add filters if provided
         if (category) query.category = category;
@@ -109,7 +110,7 @@ exports.sponsorCause = async (req, res) => {
         }
 
         // Check if cause is approved
-        if (cause.status !== 'approved') {
+        if (cause.status !== STATUS.APPROVED) {
             return errorResponse(res, 400, 'Cannot sponsor a cause that is not approved');
         }
 

@@ -136,6 +136,7 @@ exports.login = async (req, res) => {
                 role: user.role,
                 loginComplete: user.loginComplete,
                 aadhaarVerified: user.aadhaarVerified,
+                mobileVerified: user.mobileVerified,
                 token
             };
 

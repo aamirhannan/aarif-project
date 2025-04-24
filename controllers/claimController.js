@@ -1,11 +1,10 @@
 const crypto = require('crypto');
-const { Cause, STATUS } = require('../models/Cause');
+const { Cause } = require('../models/Cause');
 const { Sponsorship } = require('../models/Sponsorship');
-const { Claim, CLAIM_STATUS } = require('../models/Claim');
-const { UserVerification } = require('../models/UserVerification');
+const { Claim } = require('../models/Claim');
 const { User } = require('../models/AuthUser');
 const { successResponse, errorResponse } = require('../utils/response');
-
+const { STATUS } = require('../utils/utilFunctions');
 /**
  * Helper function to hash sensitive information
  * @param {string} data - The data to hash
@@ -37,59 +36,64 @@ const selectSponsorshipFIFO = (sponsorships) => {
 };
 
 /**
- * Verify a user's identity before allowing bag claim
+ * Verify a user's mobile number before allowing bag claim
  * @route POST /api/v1/claimer/verify-user
  * @access Public
  */
 exports.verifyUser = async (req, res) => {
     try {
-        const { aadhaar, phone, otp } = req.body;
+        const { phone, otp } = req.body;
 
-        // Determine the verification type
-        let identifierType, uniqueIdentifier;
+        // Get user ID from authenticated user
+        const userID = req.user.userID;
 
-        if (aadhaar) {
-            identifierType = 'AADHAAR';
-            uniqueIdentifier = aadhaar;
-
-            // Basic Aadhaar format validation (12 digits)
-            if (!/^\d{12}$/.test(aadhaar)) {
-                return errorResponse(res, 400, 'Invalid Aadhaar format. Must be 12 digits');
-            }
-        } else if (phone) {
-            identifierType = 'PHONE';
-            uniqueIdentifier = phone;
-
-            // Basic phone format validation (10 digits)
-            if (!/^\d{10}$/.test(phone)) {
-                return errorResponse(res, 400, 'Invalid phone format. Must be 10 digits');
-            }
-        } else {
-            return errorResponse(res, 400, 'Either Aadhaar or phone is required');
+        if (!userID) {
+            return errorResponse(res, 401, 'User authentication required');
         }
 
-        // Hash the identifier for security
-        const hashedIdentifier = hashData(uniqueIdentifier);
+        // Find the user
+        const user = await User.findOne({ userID });
+
+        if (!user) {
+            return errorResponse(res, 404, 'User not found');
+        }
+
+        // Validate phone number
+        if (!phone) {
+            return errorResponse(res, 400, 'Phone number is required');
+        }
+
+        // Basic phone format validation (10 digits)
+        if (!/^\d{10}$/.test(phone)) {
+            return errorResponse(res, 400, 'Invalid phone format. Must be 10 digits');
+        }
+
+        // If user's mobile number doesn't match the provided one, update it
+        if (user.mobNumber !== phone) {
+            user.mobNumber = phone;
+            await user.save();
+        }
 
         // If this is the initial verification request (no OTP provided)
         if (!otp) {
             // Generate a new OTP
             const newOTP = generateOTP();
 
-            // Store verification record with hashed OTP
-            const verification = await UserVerification.create({
-                uniqueIdentifier: hashedIdentifier,
-                identifierType,
-                otpCode: hashData(newOTP),
-                isVerified: false
-            });
+            // Store OTP in session or temporary storage (in production, use Redis or similar)
+            // For demo purposes, we're storing in local memory (not suitable for production)
+            if (!global.otpStore) {
+                global.otpStore = {};
+            }
 
-            // In a production environment, send the OTP via SMS or email
-            // For demo purposes, we'll just return it in the response
-            console.log(`OTP for ${identifierType}: ${newOTP}`);
+            global.otpStore[userID] = {
+                otp: newOTP,
+                expiresAt: new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
+            };
+
+            // In a production environment, send the OTP via SMS
+            console.log(`OTP for ${phone}: ${newOTP}`);
 
             return successResponse(res, 200, 'OTP sent successfully', {
-                sessionID: verification.sessionID,
                 otpSent: true,
                 // In a real app, you would NOT return the OTP
                 // This is just for testing
@@ -98,33 +102,32 @@ exports.verifyUser = async (req, res) => {
         }
 
         // If OTP is provided, verify it
-        // Find the most recent verification session for this identifier
-        const verification = await UserVerification.findOne({
-            uniqueIdentifier: hashedIdentifier,
-            identifierType,
-            isVerified: false
-        }).sort('-createdAt');
-
-        if (!verification) {
+        if (!global.otpStore || !global.otpStore[userID]) {
             return errorResponse(res, 404, 'No pending verification found. Please request a new OTP');
         }
 
-        // Check if the verification has expired
-        if (verification.isExpired()) {
+        const storedOTP = global.otpStore[userID];
+
+        // Check if the OTP has expired
+        if (new Date() > storedOTP.expiresAt) {
+            delete global.otpStore[userID];
             return errorResponse(res, 400, 'OTP has expired. Please request a new one');
         }
 
         // Verify the OTP
-        if (verification.otpCode !== hashData(otp)) {
+        if (storedOTP.otp !== otp) {
             return errorResponse(res, 400, 'Invalid OTP');
         }
 
-        // Mark as verified
-        verification.isVerified = true;
-        await verification.save();
+        // Mark the user's mobile as verified
+        user.mobileVerified = true;
+        user.loginComplete = true;
+        await user.save();
 
-        return successResponse(res, 200, 'User verified successfully', {
-            sessionID: verification.sessionID,
+        // Clean up OTP store
+        delete global.otpStore[userID];
+
+        return successResponse(res, 200, 'Mobile number verified successfully', {
             isVerified: true
         });
     } catch (error) {
@@ -209,7 +212,7 @@ exports.getCauseInfo = async (req, res) => {
 exports.claimBag = async (req, res) => {
     try {
         const { causeId } = req.params;
-        const { sessionID, location } = req.body;
+        const { location } = req.body;
 
         // Get userID from authenticated user
         const userID = req.user.userID;
@@ -218,25 +221,15 @@ exports.claimBag = async (req, res) => {
             return errorResponse(res, 401, 'User authentication required for claiming a bag');
         }
 
-        // Validate session ID
-        if (!sessionID) {
-            return errorResponse(res, 400, 'Session ID is required');
+        // Find the user and check if mobile is verified
+        const user = await User.findOne({ userID });
+
+        if (!user) {
+            return errorResponse(res, 404, 'User not found');
         }
 
-        // Find the verification session
-        const verification = await UserVerification.findOne({
-            sessionID,
-            isVerified: true
-        });
-
-        // Check if verification exists and is valid
-        if (!verification) {
-            return errorResponse(res, 401, 'User not verified. Please verify your identity first');
-        }
-
-        // Check if verification has expired
-        if (verification.isExpired()) {
-            return errorResponse(res, 401, 'Verification has expired. Please verify your identity again');
+        if (!user.mobileVerified) {
+            return errorResponse(res, 401, 'Mobile verification required. Please verify your mobile number first');
         }
 
         // Find the cause
@@ -255,10 +248,7 @@ exports.claimBag = async (req, res) => {
         // Check if user has already claimed a bag for this cause
         const existingClaim = await Claim.findOne({
             causeID: causeId,
-            $or: [
-                { uniqueIdentifier: verification.uniqueIdentifier },
-                { userID: userID }
-            ]
+            userID: userID
         });
 
         if (existingClaim) {
@@ -289,10 +279,10 @@ exports.claimBag = async (req, res) => {
             causeID: causeId,
             sponsorshipID: selectedSponsorship.sponsorshipID,
             userID: userID,
-            uniqueIdentifier: verification.uniqueIdentifier,
-            identifierType: verification.identifierType,
+            uniqueIdentifier: userID,
+            identifierType: 'USER_ID',
             location: location || null,
-            status: CLAIM_STATUS.COMPLETED
+            status: STATUS.COMPLETED
         });
 
         // Update the sponsorship
@@ -301,7 +291,7 @@ exports.claimBag = async (req, res) => {
 
         // Check if all bags are now claimed
         if (selectedSponsorship.bagsClaimed >= selectedSponsorship.bagCount) {
-            selectedSponsorship.status = 'COMPLETED';
+            selectedSponsorship.status = STATUS.COMPLETED;
         }
 
         await selectedSponsorship.save();
@@ -317,14 +307,11 @@ exports.claimBag = async (req, res) => {
         // Get sponsor info for the response
         const sponsor = await User.findOne({ userID: selectedSponsorship.userID }).select('name');
 
-        // Get user info as well
-        const user = await User.findOne({ userID: userID }).select('name');
-
         return successResponse(res, 200, 'Bag claimed successfully', {
             claimID: claim.claimID,
             claimedAt: claim.createdAt,
             causeTitle: cause.title,
-            userName: user ? user.name : 'Unknown User',
+            userName: user.name || 'Unknown User',
             sponsorName: sponsor ? sponsor.name : 'Anonymous Sponsor',
             sponsorMessage: selectedSponsorship.message,
             totalClaimed: cause.claimedCount,
