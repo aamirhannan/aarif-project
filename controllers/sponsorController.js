@@ -85,11 +85,14 @@ exports.getCauses = async (req, res) => {
 exports.sponsorCause = async (req, res) => {
     try {
         const { causeId } = req.params;
-        const { sponsorId, bagCount, branding, message } = req.body;
+        const { bagCount, branding, message } = req.body;
+
+        // Get userID from authenticated user
+        const userID = req.user.userID;
 
         // Validate required fields
-        if (!sponsorId || !bagCount) {
-            return errorResponse(res, 400, 'Sponsor ID and bag count are required');
+        if (!bagCount) {
+            return errorResponse(res, 400, 'Bag count is required');
         }
 
         // Validate bagCount is a positive number
@@ -110,16 +113,10 @@ exports.sponsorCause = async (req, res) => {
             return errorResponse(res, 400, 'Cannot sponsor a cause that is not approved');
         }
 
-        // Check if sponsoring user exists
-        const sponsor = await User.findOne({ userID: sponsorId });
-        if (!sponsor) {
-            return errorResponse(res, 404, 'Sponsor user not found');
-        }
-
         // Create the sponsorship
         const sponsorship = await Sponsorship.create({
             causeID: causeId,
-            sponsorID: sponsorId,
+            userID: userID,
             bagCount,
             branding,
             message
@@ -146,27 +143,27 @@ exports.sponsorCause = async (req, res) => {
 };
 
 /**
- * Get tracking details for a sponsor's sponsorships
- * @route GET /api/v1/sponsor/tracking/:sponsorId
+ * Get tracking details for a user's sponsorships
+ * @route GET /api/v1/sponsor/tracking/:userId
  * @access Protected
  */
 exports.getSponsorTracking = async (req, res) => {
     try {
-        const { sponsorId } = req.params;
+        const { userId } = req.params;
 
-        // Verify sponsor exists
-        const sponsor = await User.findOne({ userID: sponsorId });
-        if (!sponsor) {
-            return errorResponse(res, 404, 'Sponsor not found');
+        // Verify user exists
+        const user = await User.findOne({ userID: userId });
+        if (!user) {
+            return errorResponse(res, 404, 'User not found');
         }
 
-        // Find all sponsorships for this sponsor
-        const sponsorships = await Sponsorship.find({ sponsorID: sponsorId })
+        // Find all sponsorships for this user
+        const sponsorships = await Sponsorship.find({ userID: userId })
             .sort('-createdAt');
 
         // If no sponsorships found
         if (sponsorships.length === 0) {
-            return successResponse(res, 200, 'No sponsorships found for this sponsor', []);
+            return successResponse(res, 200, 'No sponsorships found for this user', []);
         }
 
         // Get all unique cause IDs from the sponsorships

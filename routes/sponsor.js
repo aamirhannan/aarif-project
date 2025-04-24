@@ -22,10 +22,10 @@ router.get('/causes', protect, getCauses);
 router.post('/:causeId', protect, sponsorCause);
 
 /**
- * @route   GET /api/v1/sponsor/tracking/:sponsorId
- * @desc    Get tracking details for a sponsor's sponsorships
+ * @route   GET /api/v1/sponsor/tracking/:userId
+ * @desc    Get tracking details for a user's sponsorships
  * @access  Protected - requires authentication
  */
-router.get('/tracking/:sponsorId', protect, getSponsorTracking);
+router.get('/tracking/:userId', protect, getSponsorTracking);
 
 module.exports = router; 

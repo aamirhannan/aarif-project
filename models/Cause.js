@@ -41,8 +41,14 @@ const causeSchema = new mongoose.Schema({
         required: [true, 'Please specify the quantity of bags needed'],
         min: [1, 'Quantity must be at least 1']
     },
-    // Number of bags that have been claimed/sponsored
+    // Number of bags that have been sponsored (pledged by sponsors)
     claimed: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    // Number of bags that have been claimed by end-users
+    claimedCount: {
         type: Number,
         default: 0,
         min: 0
@@ -90,6 +96,17 @@ causeSchema.virtual('progressPercentage').get(function () {
 // Virtual field to check if cause is fully funded
 causeSchema.virtual('isFullyFunded').get(function () {
     return this.currentPrice >= this.totalAmount;
+});
+
+// Virtual field for claim percentage
+causeSchema.virtual('claimPercentage').get(function () {
+    if (this.claimed === 0) return 0;
+    return Math.min(100, (this.claimedCount / this.claimed) * 100).toFixed(2);
+});
+
+// Virtual field to check if all bags have been claimed
+causeSchema.virtual('isFullyClaimed').get(function () {
+    return this.claimedCount >= this.claimed;
 });
 
 // Ensure virtuals are included when converting to JSON

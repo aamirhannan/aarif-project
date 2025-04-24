@@ -15,10 +15,10 @@ const sponsorshipSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Cause ID is required']
     },
-    // Reference to the sponsor (using the user's UUID)
-    sponsorID: {
+    // Reference to the user who created this sponsorship (using the user's UUID)
+    userID: {
         type: String,
-        required: [true, 'Sponsor ID is required']
+        required: [true, 'User ID is required']
     },
     // Number of bags being sponsored
     bagCount: {

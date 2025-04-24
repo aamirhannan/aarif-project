@@ -2,7 +2,20 @@ const { Cause, STATUS } = require('../models/Cause');
 const { successResponse, errorResponse } = require('../utils/response');
 const QRCode = require('qrcode');
 const { User } = require('../models/AuthUser');
+const { v4: uuidv4 } = require('uuid');
 
+
+const catogeryMap = {
+    ENVIRONMENT: "ENVIRONMENT",
+    HEALTH: "HEALTH",
+    EDUCATION: "EDUCATION",
+    WOMEN_EMPOWERMENT: "WOMEN_EMPOWERMENT",
+    ANIMAL_WELFARE: "ANIMAL_WELFARE",
+    CHILD_WELFARE: "CHILD_WELFARE",
+    DISASTER_RELIEF: "DISASTER_RELIEF",
+    CLEANLINESS_SANITATION: "CLEANLINESS_SANITATION",
+    HUNGER_FOOD_SECURITY: "HUNGER_FOOD_SECURITY"
+}
 
 createCause = async (req, res) => {
     try {
@@ -19,8 +32,14 @@ createCause = async (req, res) => {
         // Calculate total amount based on quantity and single item price
         const totalAmount = qty * singleItemPrice;
 
+        // Validate category
+        if (!catogeryMap[category]) {
+            return errorResponse(res, 400, 'Invalid category');
+        }
+        const causeID = uuidv4();
         // Create cause with user's userID (UUID) from authenticated user
         const cause = await Cause.create({
+            causeID,
             title,
             description,
             qty,
