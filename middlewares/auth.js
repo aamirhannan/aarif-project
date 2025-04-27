@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
-const { User, ROLES } = require('../models/AuthUser');
+const { User } = require('../models/AuthUser');
 const { errorResponse } = require('../utils/response');
+const { ROLES } = require('../utils/utilFunctions')
 
 /**
  * Middleware to verify JWT token and attach user to request
@@ -76,7 +77,7 @@ exports.authorize = (...roles) => {
  */
 
 // Allow access to only CAUSE_POSTER role
-exports.causeCreatorOnly = (req, res, next) => exports.authorize(ROLES.CAUSE_POSTER)(req, res, next);
+exports.causeCreatorOnly = (req, res, next) => exports.authorize(ROLES.CAUSE_CREATOR)(req, res, next);
 
 // Allow access to only SPONSOR role
 exports.sponsorOnly = (req, res, next) => exports.authorize(ROLES.SPONSOR)(req, res, next);

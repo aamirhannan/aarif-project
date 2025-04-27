@@ -1,9 +1,9 @@
-const { Cause, STATUS } = require('../models/Cause');
+const { Cause } = require('../models/Cause');
 const { successResponse, errorResponse } = require('../utils/response');
 const QRCode = require('qrcode');
 const { User } = require('../models/AuthUser');
 const { v4: uuidv4 } = require('uuid');
-
+const { STATUS } = require('../utils/utilFunctions');
 
 const catogeryMap = {
     ENVIRONMENT: "ENVIRONMENT",
@@ -19,18 +19,27 @@ const catogeryMap = {
 
 createCause = async (req, res) => {
     try {
+
+        console.log("req.body", req.body);
         // Get data from request body
         const {
             title,
             description,
-            qty,
+            quantity,
             singleItemPrice,
             category,
             impactLevel
         } = req.body;
 
         // Calculate total amount based on quantity and single item price
-        const totalAmount = qty * singleItemPrice;
+        const totalAmount = Number(quantity) * Number(singleItemPrice);
+
+        if (isNaN(totalAmount)) {
+            console.log("quantity", quantity)
+            console.log("singleItemPrice", singleItemPrice)
+            console.log("totalAmount", totalAmount);
+            return errorResponse(res, 400, 'Invalid quantity or price');
+        }
 
         // Validate category
         if (!catogeryMap[category]) {
@@ -42,7 +51,7 @@ createCause = async (req, res) => {
             causeID,
             title,
             description,
-            qty,
+            quantity,
             singleItemPrice,
             totalAmount,
             category,
@@ -193,7 +202,7 @@ getShareableCause = async (req, res) => {
                 };
 
                 // Generate shareable link (in a real app, use your frontend URL)
-                const shareLink = `${process.env.FRONTEND_URL || 'https://yourdomain.com'}/cause/${causeId}`;
+                const shareLink = `${process.env.FRONTEND_URL}/all-cause/${causeId}`;
 
                 // Generate QR code as data URL
                 let qrCodeDataURL;
@@ -205,15 +214,15 @@ getShareableCause = async (req, res) => {
                 }
 
                 return successResponse(res, 200, 'Share link and QR code generated', {
-                    cause: causeObj,
+                    // cause: causeObj,
                     shareLink,
                     qrCode: qrCodeDataURL,
                     // You can also provide social share links
-                    socialShares: {
-                        twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(`Support this cause: ${cause.title}`)}`,
-                        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`,
-                        whatsapp: `https://wa.me/?text=${encodeURIComponent(`Support this cause: ${cause.title} ${shareLink}`)}`
-                    }
+                    // socialShares: {
+                    //     twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(`Support this cause: ${cause.title}`)}`,
+                    //     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`,
+                    //     whatsapp: `https://wa.me/?text=${encodeURIComponent(`Support this cause: ${cause.title} ${shareLink}`)}`
+                    // }
                 });
             }
         } catch (userError) {
@@ -222,7 +231,7 @@ getShareableCause = async (req, res) => {
 
         // If user info couldn't be retrieved, continue with just the cause
         // Generate shareable link (in a real app, use your frontend URL)
-        const shareLink = `${process.env.FRONTEND_URL || 'https://yourdomain.com'}/cause/${causeId}`;
+        const shareLink = `${process.env.FRONTEND_URL}/all-cause/${causeId}`;
 
         // Generate QR code as data URL
         let qrCodeDataURL;
@@ -234,15 +243,14 @@ getShareableCause = async (req, res) => {
         }
 
         return successResponse(res, 200, 'Share link and QR code generated', {
-            cause,
+            // cause,
             shareLink,
             qrCode: qrCodeDataURL,
-            // You can also provide social share links
-            socialShares: {
-                twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(`Support this cause: ${cause.title}`)}`,
-                facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`,
-                whatsapp: `https://wa.me/?text=${encodeURIComponent(`Support this cause: ${cause.title} ${shareLink}`)}`
-            }
+            // socialShares: {
+            //     twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(`Support this cause: ${cause.title}`)}`,
+            //     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`,
+            //     whatsapp: `https://wa.me/?text=${encodeURIComponent(`Support this cause: ${cause.title} ${shareLink}`)}`
+            // }
         });
     } catch (error) {
         console.error('Share cause error:', error);

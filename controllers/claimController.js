@@ -321,4 +321,21 @@ exports.claimBag = async (req, res) => {
         console.error('Claim bag error:', error);
         return errorResponse(res, 500, 'Error claiming bag', error.message);
     }
-}; 
+};
+
+
+exports.getCauseById = async (req, res) => {
+    try {
+        const { causeId } = req.params;
+
+        const cause = await Cause.findOne({ causeID: causeId });
+
+        if (!cause) {
+            return errorResponse(res, 404, 'Cause not found');
+        }
+        return successResponse(res, 200, 'Cause found', cause);
+    } catch (error) {
+        console.error('Get cause by ID error:', error);
+        return errorResponse(res, 500, 'Error getting cause by ID', error.message);
+    }
+}

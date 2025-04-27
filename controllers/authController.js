@@ -1,14 +1,16 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { User, ROLES } = require('../models/AuthUser');
+const { User } = require('../models/AuthUser');
 const { successResponse, errorResponse } = require('../utils/response');
-
+const ERROR_MESSAGE = require('../utils/errorMessage');
+const { ROLES } = require('../utils/utilFunctions')
 
 const mapRole = (inputRole) => {
     const roleMap = {
-        'CAUSE_POSTER': ROLES.CAUSE_POSTER,
+        'CAUSE_CREATOR': ROLES.CAUSE_CREATOR,
         'SPONSOR': ROLES.SPONSOR,
-        'PUBLIC': ROLES.PUBLIC
+        'PUBLIC': ROLES.PUBLIC,
+        'ADMIN': ROLES.ADMIN
     };
     return roleMap[inputRole.toUpperCase()] || null;
 };
@@ -29,27 +31,28 @@ exports.register = async (req, res) => {
     try {
         const { name, mobNumber, email, password, role } = req.body;
 
-        // Validation
+        console.log(req.body);
+        // Validation   
         if (!name || !password || !role) {
-            return errorResponse(res, 400, 'Please provide name, password and role');
+            return errorResponse(res, 400, ERROR_MESSAGE.INPUT_MISSING);
         }
 
         // Map the input role to system role
         const systemRole = mapRole(role);
         if (!systemRole) {
-            return errorResponse(res, 400, `Invalid role. Must be one of: causePoster, sponsor, public`);
+            return errorResponse(res, 400, ERROR_MESSAGE.INVALID_ROLE);
         }
 
         // Check if email is provided for non-public roles
         if (systemRole !== ROLES.PUBLIC && !email) {
-            return errorResponse(res, 400, 'Email is required for causePoster and sponsor roles');
+            return errorResponse(res, 400, ERROR_MESSAGE.UNAUTHORIZED_ROLE);
         }
 
         // Check if user already exists with the same email
         if (email) {
             const existingUser = await User.findOne({ email });
             if (existingUser) {
-                return errorResponse(res, 400, 'User with this email already exists');
+                return errorResponse(res, 400, ERROR_MESSAGE.USER_ALREADY_EXISTS);
             }
         }
 
@@ -81,22 +84,22 @@ exports.register = async (req, res) => {
                 token
             };
 
-            return successResponse(res, 201, 'User registered successfully', userData);
+            return successResponse(res, 201, ERROR_MESSAGE.USER_REGISTERED_SUCCESSFULLY, userData);
         } catch (createError) {
             // Handle Mongoose validation errors
             if (createError.name === 'ValidationError') {
                 const validationErrors = Object.values(createError.errors).map(err => err.message);
-                return errorResponse(res, 400, 'Validation Error', validationErrors.join(', '));
+                return errorResponse(res, 400, ERROR_MESSAGE.VALIDATION_ERROR, validationErrors.join(', '));
             }
             // Handle duplicate key errors
             if (createError.code === 11000) {
-                return errorResponse(res, 400, 'Duplicate field value entered');
+                return errorResponse(res, 400, ERROR_MESSAGE.DUPLICATE_VALUE);
             }
             throw createError; // Re-throw for the outer catch block
         }
     } catch (error) {
         console.error('Register error:', error);
-        return errorResponse(res, 500, 'Server Error', error.message);
+        return errorResponse(res, 500, ERROR_MESSAGE.SERVER_ERROR, error.message);
     }
 };
 
@@ -111,16 +114,21 @@ exports.login = async (req, res) => {
 
         // Validation
         if (!email || !password) {
-            return errorResponse(res, 400, 'Please provide email and password');
+            return errorResponse(res, 400, ERROR_MESSAGE.INPUT_MISSING);
         }
 
         try {
             // Find user by email
             const user = await User.findOne({ email });
 
+
+            if (!user) {
+                return errorResponse(res, 401, ERROR_MESSAGE.USER_NOT_FOUND);
+            }
+
             // Check if user exists and password matches
-            if (!user || !(await bcrypt.compare(password, user.password))) {
-                return errorResponse(res, 401, 'Invalid credentials');
+            if (!(await bcrypt.compare(password, user.password))) {
+                return errorResponse(res, 401, ERROR_MESSAGE.INVALID_CREDENTIALS);
             }
 
             // Generate token using userID (UUID) instead of _id
@@ -140,14 +148,14 @@ exports.login = async (req, res) => {
                 token
             };
 
-            return successResponse(res, 200, 'Login successful', userData);
+            return successResponse(res, 200, ERROR_MESSAGE.LOGIN_SUCCESSFUL, userData);
         } catch (dbError) {
             console.error('Database error during login:', dbError);
-            return errorResponse(res, 500, 'Error retrieving user data', dbError.message);
+            return errorResponse(res, 500, ERROR_MESSAGE.DATABASE_ERROR, dbError.message);
         }
     } catch (error) {
         console.error('Login error:', error);
-        return errorResponse(res, 500, 'Server Error', error.message);
+        return errorResponse(res, 500, ERROR_MESSAGE.SERVER_ERROR, error.message);
     }
 };
 

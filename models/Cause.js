@@ -30,7 +30,7 @@ const causeSchema = new mongoose.Schema({
         trim: true
     },
     // Total quantity of tote bags requested
-    qty: {
+    quantity: {
         type: Number,
         required: [true, 'Please specify the quantity of bags needed'],
         min: [1, 'Quantity must be at least 1']
@@ -111,5 +111,4 @@ const Cause = mongoose.model('Cause', causeSchema);
 
 module.exports = {
     Cause,
-    STATUS
 }; 

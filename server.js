@@ -7,6 +7,7 @@ const causeRoutes = require('./routes/cause');
 const sponsorRoutes = require('./routes/sponsor');
 const claimerRoutes = require('./routes/claimer');
 const { errorHandler, notFound } = require('./middlewares/errorHandler');
+const cors = require('cors');
 
 // Uncaught exception handler
 process.on('uncaughtException', (err) => {
@@ -15,12 +16,28 @@ process.on('uncaughtException', (err) => {
     process.exit(1);
 });
 
+// CORS configuration
+
+
+// CORS configuration
+const corsOptions = {
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true,
+    maxAge: 86400 // 24 hours
+};
+
+
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json({ limit: '10kb' }));
 app.use(morgan('dev'));
+// Enable CORS for all routes
+app.use(cors(corsOptions));
 
 // Routes
 app.use('/api/v1', authRoutes);

@@ -85,6 +85,9 @@ exports.getCauses = async (req, res) => {
  */
 exports.sponsorCause = async (req, res) => {
     try {
+        console.log("req.body", req.body);
+        console.log("req.params", req.params);
+        
         const { causeId } = req.params;
         const { bagCount, branding, message } = req.body;
 
@@ -201,7 +204,8 @@ exports.getSponsorTracking = async (req, res) => {
                 claimPercentage: sponsorshipObj.claimPercentage,
                 status: sponsorshipObj.status,
                 lastClaimedAt: sponsorshipObj.lastClaimedAt,
-                createdAt: sponsorshipObj.createdAt
+                createdAt: sponsorshipObj.createdAt,
+                causeID: sponsorshipObj.causeID,
             };
         });
 

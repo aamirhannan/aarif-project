@@ -4,7 +4,15 @@ const STATUS = {
     REJECTED: 'REJECTED'
 }
 
+const ROLES = {
+    CAUSE_CREATOR: 'CAUSE_CREATOR',
+    SPONSOR: 'SPONSOR',
+    PUBLIC: 'PUBLIC',
+    ADMIN: 'ADMIN'
+}
+
 module.exports = {
-    STATUS
+    STATUS,
+    ROLES
 }
 

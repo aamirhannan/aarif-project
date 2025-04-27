@@ -124,7 +124,7 @@ A simple Express API for user authentication with JWT.
     {
       "title": "Clean Water Initiative",
       "description": "Providing clean water to rural communities",
-      "qty": 100,
+      "quantity": 100,
       "singleItemPrice": 25,
       "category": "Environment",
       "impactLevel": "High"
@@ -142,7 +142,7 @@ A simple Express API for user authentication with JWT.
         "causeID": "550e8400-e29b-41d4-a716-446655440000",
         "title": "Clean Water Initiative",
         "description": "Providing clean water to rural communities",
-        "qty": 100,
+        "quantity": 100,
         "claimed": 0,
         "singleItemPrice": 25,
         "totalAmount": 2500,
@@ -181,7 +181,7 @@ A simple Express API for user authentication with JWT.
           "causeID": "550e8400-e29b-41d4-a716-446655440000",
           "title": "Clean Water Initiative",
           "description": "Providing clean water to rural communities",
-          "qty": 100,
+          "quantity": 100,
           "claimed": 0,
           "singleItemPrice": 25,
           "totalAmount": 2500,
@@ -226,7 +226,7 @@ A simple Express API for user authentication with JWT.
             "causeID": "550e8400-e29b-41d4-a716-446655440000",
             "title": "Clean Water Initiative",
             "description": "Providing clean water to rural communities",
-            "qty": 100,
+            "quantity": 100,
             "claimed": 0,
             "singleItemPrice": 25,
             "totalAmount": 2500,
@@ -316,7 +316,7 @@ The cause model includes the following fields:
 - `createdBy`: Reference to the user who created the cause
 - `title`: Title of the cause
 - `description`: Detailed description of the cause
-- `qty`: Total quantity of tote bags requested
+- `quantity`: Total quantity of tote bags requested
 - `claimed`: Number of bags that have been claimed/sponsored (default: 0)
 - `totalAmount`: Total amount needed for all bags
 - `currentPrice`: Current amount that has been sponsored (default: 0)
@@ -365,7 +365,7 @@ curl -X POST http://localhost:5000/api/v1/causes \
   -d '{
     "title": "Clean Water Initiative",
     "description": "Providing clean water to rural communities",
-    "qty": 100,
+    "quantity": 100,
     "singleItemPrice": 25,
     "category": "Environment",
     "impactLevel": "High"

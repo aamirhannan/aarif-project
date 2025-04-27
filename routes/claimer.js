@@ -4,7 +4,8 @@ const { protect, publicOnly } = require('../middlewares/auth');
 const {
     verifyUser,
     getCauseInfo,
-    claimBag
+    claimBag,
+    getCauseById
 } = require('../controllers/claimController');
 
 /**
@@ -27,5 +28,9 @@ router.get('/cause/info/:causeId', protect, publicOnly, getCauseInfo);
  * @access  Protected - requires authentication as PUBLIC or SPONSOR user and verification
  */
 router.post('/claim-bag/:causeId', protect, publicOnly, claimBag);
+
+
+// get cause by cause id
+router.get('/cause/:causeId', getCauseById);
 
 module.exports = router; 

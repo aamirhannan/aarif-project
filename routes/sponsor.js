@@ -12,7 +12,7 @@ const {
  * @desc    Get all approved causes with optional filters for category and impact
  * @access  Public
  */
-router.get('/causes', protect, sponsorOnly, getCauses);
+router.get('/causes', getCauses);
 
 /**
  * @route   POST /api/v1/sponsor/:causeId

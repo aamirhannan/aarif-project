@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 // const causeController = require('../controllers/causeController');
 const { protect, authorize, authnticateUser, causeCreatorOnly } = require('../middlewares/auth');
-const { ROLES } = require('../models/AuthUser');
 const { asyncHandler } = require('../middlewares/errorHandler');
 const { createCause, getUserCauses, getAllApprovedCauses, getShareableCause } = require('../controllers/causeController');
+const { ROLES } = require('../utils/utilFunctions')
 
 
 
@@ -18,6 +18,6 @@ router.get('/all-caused-by-user/:userId', protect, asyncHandler(getUserCauses));
 // router.get('/causes', asyncHandler(getAllApprovedCauses));
 
 // GET /api/v1/cause/share/:causeId - Get share link and QR code for a cause
-router.get('/cause/share/:causeId', protect, asyncHandler(getShareableCause));
+router.get('/cause/share/:causeId', asyncHandler(getShareableCause));
 
 module.exports = router; 
