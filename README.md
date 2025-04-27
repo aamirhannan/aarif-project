@@ -18,6 +18,9 @@ A simple Express API for user authentication with JWT.
    MONGO_URI=mongodb://localhost:27017/aarif-project
    JWT_SECRET=your_jwt_secret_key_change_in_production
    FRONTEND_URL=http://localhost:3000
+   CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+   CLOUDINARY_API_KEY=your_cloudinary_api_key
+   CLOUDINARY_API_SECRET=your_cloudinary_api_secret
    ```
 
 3. Start the server:
@@ -371,3 +374,29 @@ curl -X POST http://localhost:5000/api/v1/causes \
     "impactLevel": "High"
   }'
 ```
+
+## Cloudinary and Image Upload Configuration
+
+To enable image uploads for causes, you need to set up Cloudinary integration:
+
+1. Create a free account at [Cloudinary](https://cloudinary.com/)
+2. Get your Cloudinary credentials from the dashboard
+3. Add the following variables to your `.env` file:
+
+```
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+```
+
+When creating a new cause, you can now upload an image using a multipart form with the field name `image`.
+
+Example form data structure:
+
+- title: "Your Cause Title"
+- description: "Your Cause Description"
+- quantity: 10
+- singleItemPrice: 20
+- category: "EDUCATION"
+- impactLevel: "HIGH"
+- image: [Your image file]

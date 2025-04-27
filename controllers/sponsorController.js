@@ -87,7 +87,7 @@ exports.sponsorCause = async (req, res) => {
     try {
         console.log("req.body", req.body);
         console.log("req.params", req.params);
-        
+
         const { causeId } = req.params;
         const { bagCount, branding, message } = req.body;
 
@@ -184,7 +184,8 @@ exports.getSponsorTracking = async (req, res) => {
                 description: cause.description,
                 category: cause.category,
                 impactLevel: cause.impactLevel,
-                status: cause.status
+                status: cause.status,
+                imageURL: cause.imageURL
             };
         });
 
@@ -206,6 +207,7 @@ exports.getSponsorTracking = async (req, res) => {
                 lastClaimedAt: sponsorshipObj.lastClaimedAt,
                 createdAt: sponsorshipObj.createdAt,
                 causeID: sponsorshipObj.causeID,
+                imageURL: causeInfo.imageURL
             };
         });
 

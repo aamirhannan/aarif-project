@@ -5,11 +5,12 @@ const { protect, authorize, authnticateUser, causeCreatorOnly } = require('../mi
 const { asyncHandler } = require('../middlewares/errorHandler');
 const { createCause, getUserCauses, getAllApprovedCauses, getShareableCause } = require('../controllers/causeController');
 const { ROLES } = require('../utils/utilFunctions')
+const { upload } = require('../utils/cloudinary');
 
 
 
-// POST /api/v1/causes - Create a new cause (only for CAUSE_POSTER role)
-router.post('/causes', protect, causeCreatorOnly, asyncHandler(createCause));
+// POST /api/v1/causes - Create a new cause (only for CAUSE_CREATOR role)
+router.post('/causes', protect, causeCreatorOnly, upload.single('image'), asyncHandler(createCause));
 
 // GET /api/v1/causes/:userId - Get all causes created by a specific user
 router.get('/all-caused-by-user/:userId', protect, asyncHandler(getUserCauses));

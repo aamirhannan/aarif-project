@@ -29,6 +29,11 @@ const causeSchema = new mongoose.Schema({
         required: [true, 'Please provide a description for the cause'],
         trim: true
     },
+    // Image URL for the cause (from Cloudinary)
+    imageURL: {
+        type: String,
+        default: ''
+    },
     // Total quantity of tote bags requested
     quantity: {
         type: Number,

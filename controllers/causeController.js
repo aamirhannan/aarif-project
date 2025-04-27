@@ -19,8 +19,8 @@ const catogeryMap = {
 
 createCause = async (req, res) => {
     try {
-
         console.log("req.body", req.body);
+        console.log("req.file", req.file);
         // Get data from request body
         const {
             title,
@@ -28,7 +28,7 @@ createCause = async (req, res) => {
             quantity,
             singleItemPrice,
             category,
-            impactLevel
+            impactLevel,
         } = req.body;
 
         // Calculate total amount based on quantity and single item price
@@ -45,7 +45,13 @@ createCause = async (req, res) => {
         if (!catogeryMap[category]) {
             return errorResponse(res, 400, 'Invalid category');
         }
+
         const causeID = uuidv4();
+
+        // Get image URL from req.file if available (added by Multer)
+        const imageURL = req.file ? req.file.path : '';
+
+        console.log("imageURL", imageURL);
         // Create cause with user's userID (UUID) from authenticated user
         const cause = await Cause.create({
             causeID,
@@ -56,6 +62,7 @@ createCause = async (req, res) => {
             totalAmount,
             category,
             impactLevel,
+            imageURL, // Add the Cloudinary image URL
             createdBy: req.user.userID // This is now a string UUID
         });
 
