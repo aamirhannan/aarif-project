@@ -23,11 +23,6 @@ const claimSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Sponsorship ID is required']
     },
-    // Reference to the logged-in user who claimed the bag (using the user's UUID)
-    userID: {
-        type: String,
-        required: [true, 'User ID is required for claiming a bag']
-    },
     // Aadhaar number or mobile number of the claimant (encrypted/hashed for privacy)
     uniqueIdentifier: {
         type: String,
@@ -40,32 +35,17 @@ const claimSchema = new mongoose.Schema({
         enum: ['AADHAAR', 'PHONE', 'EMAIL', 'USER_ID'],
         required: true
     },
-    // Optional location data for analytics
-    location: {
-        type: {
-            longitude: Number,
-            latitude: Number,
-            address: String
-        },
-        default: null
-    },
     // Status of the claim
     status: {
         type: String,
         enum: Object.values(STATUS),
         default: STATUS.COMPLETED
     },
-    // Optional notes or feedback from the claimant
-    notes: {
-        type: String,
-        trim: true
-    }
 }, { timestamps: true });
 
 // Create a compound index to ensure one bag per user per cause
 claimSchema.index({ causeID: 1, uniqueIdentifier: 1 }, { unique: true });
-// Also add an index for the userID for faster queries
-claimSchema.index({ userID: 1 });
+
 
 const Claim = mongoose.model('Claim', claimSchema);
 

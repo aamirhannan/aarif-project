@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const axios = require('axios');
 const { Cause } = require('../models/Cause');
 const { Sponsorship } = require('../models/Sponsorship');
 const { Claim } = require('../models/Claim');
@@ -15,11 +16,104 @@ const hashData = (data) => {
 };
 
 /**
- * Helper function to generate a random OTP
- * @returns {string} - 6-digit OTP
+ * Generate OTP using MSG91 and send to user's mobile number
+ * @route POST /api/v1/claimer/generate-otp
+ * @access Public
  */
-const generateOTP = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+exports.generateOTP = async (req, res) => {
+    try {
+        const { phone } = req.body;
+
+        if (!phone) {
+            return errorResponse(res, 400, 'Phone number is required');
+        }
+
+        // Basic phone format validation (10 digits)
+        if (!/^\d{10}$/.test(phone)) {
+            return errorResponse(res, 400, 'Invalid phone format. Must be 10 digits');
+        }
+
+        // Call MSG91 API to send OTP
+        const response = await axios.get('https://control.msg91.com/api/v5/otp', {
+            params: {
+                authkey: process.env.MSG91_AUTH_KEY,
+                mobile: `91${phone}`, // Adding country code for India
+                template_id: process.env.MSG91_TEMPLATE_ID,
+                otp_expiry: 5 // OTP expires in 5 minutes
+            }
+        });
+
+        if (response.data && response.data.type === 'success') {
+            return successResponse(res, 200, 'OTP sent successfully', {
+                message: 'OTP sent to your mobile number',
+                requestId: response.data.request_id,
+                demo_otp: process.env.NODE_ENV === 'development' ? response.data.otp : undefined
+            });
+        } else {
+            return errorResponse(res, 400, 'Failed to send OTP', response.data);
+        }
+    } catch (error) {
+        console.error('Error sending OTP:', error.response?.data || error.message);
+        return errorResponse(res, 500, 'Error sending OTP', error.message);
+    }
+};
+
+/**
+ * Verify OTP using MSG91
+ * @route POST /api/v1/claimer/verify-otp
+ * @access Public
+ */
+exports.claimBag = async (req, res) => {
+    try {
+        const { phone, otp } = req.body;
+
+        if (!phone || !otp) {
+            return errorResponse(res, 400, 'Phone number and OTP are required');
+        }
+
+        // Basic phone format validation (10 digits)
+        if (!/^\d{10}$/.test(phone)) {
+            return errorResponse(res, 400, 'Invalid phone format. Must be 10 digits');
+        }
+
+        // Call MSG91 API to verify OTP
+        const response = await axios.get('https://control.msg91.com/api/v5/otp/verify', {
+            params: {
+                authkey: process.env.MSG91_AUTH_KEY,
+                mobile: `91${phone}`,
+                otp: otp
+            }
+        });
+
+        console.log("response", response);
+
+        if (response.data && response.data.type === 'success') {
+            const userID = req.user?.userID;
+
+            if (userID) {
+                const user = await User.findOne({ userID });
+                if (user) {
+                    if (user.mobNumber !== phone) {
+                        user.mobNumber = phone;
+                    }
+
+                    user.mobileVerified = true;
+                    user.loginComplete = true;
+                    await user.save();
+                }
+            }
+
+            return successResponse(res, 200, 'OTP verified successfully', {
+                isVerified: true,
+                message: 'Mobile number verified successfully'
+            });
+        } else {
+            return errorResponse(res, 400, 'OTP verification failed', response.data);
+        }
+    } catch (error) {
+        console.error('Error verifying OTP:', error.response?.data || error.message);
+        return errorResponse(res, 500, 'Error verifying OTP', error.message);
+    }
 };
 
 /**
@@ -209,32 +303,14 @@ exports.getCauseInfo = async (req, res) => {
  * @route POST /api/v1/claimer/claim-bag/:causeId
  * @access Protected (requires login and verification)
  */
-exports.claimBag = async (req, res) => {
+exports.verifyOTP = async (req, res) => {
     try {
-        const { causeId } = req.params;
-        const { location } = req.body;
-
-        // Get userID from authenticated user
-        const userID = req.user.userID;
-
-        if (!userID) {
-            return errorResponse(res, 401, 'User authentication required for claiming a bag');
-        }
-
-        // Find the user and check if mobile is verified
-        const user = await User.findOne({ userID });
-
-        if (!user) {
-            return errorResponse(res, 404, 'User not found');
-        }
-
-        if (!user.mobileVerified) {
-            return errorResponse(res, 401, 'Mobile verification required. Please verify your mobile number first');
-        }
+        const { causeId, mobileNumber, otp } = req.body;
 
         // Find the cause
         const cause = await Cause.findOne({ causeID: causeId });
 
+        console.log("cause", cause);
         // Check if cause exists
         if (!cause) {
             return errorResponse(res, 404, 'Cause not found');
@@ -248,11 +324,25 @@ exports.claimBag = async (req, res) => {
         // Check if user has already claimed a bag for this cause
         const existingClaim = await Claim.findOne({
             causeID: causeId,
-            userID: userID
+            uniqueIdentifier: mobileNumber,
+            identifierType: 'PHONE'
         });
 
         if (existingClaim) {
             return errorResponse(res, 400, 'You have already claimed a bag for this cause');
+        }
+
+        // Call MSG91 API to verify OTP
+        const response = await axios.get('https://control.msg91.com/api/v5/otp/verify', {
+            params: {
+                authkey: process.env.MSG91_AUTH_KEY,
+                mobile: `91${mobileNumber}`,
+                otp: otp
+            }
+        });
+
+        if (response.status != 200 || response.data && response.data.type != 'success') {
+            return errorResponse(res, 400, 'Invalid OTP');
         }
 
         // Find sponsorships with available bags
@@ -278,10 +368,8 @@ exports.claimBag = async (req, res) => {
         const claim = await Claim.create({
             causeID: causeId,
             sponsorshipID: selectedSponsorship.sponsorshipID,
-            userID: userID,
-            uniqueIdentifier: userID,
-            identifierType: 'USER_ID',
-            location: location || null,
+            uniqueIdentifier: mobileNumber,
+            identifierType: 'PHONE',
             status: STATUS.COMPLETED
         });
 
@@ -311,7 +399,6 @@ exports.claimBag = async (req, res) => {
             claimID: claim.claimID,
             claimedAt: claim.createdAt,
             causeTitle: cause.title,
-            userName: user.name || 'Unknown User',
             sponsorName: sponsor ? sponsor.name : 'Anonymous Sponsor',
             sponsorMessage: selectedSponsorship.message,
             totalClaimed: cause.claimedCount,

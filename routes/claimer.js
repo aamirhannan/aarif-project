@@ -5,7 +5,9 @@ const {
     verifyUser,
     getCauseInfo,
     claimBag,
-    getCauseById
+    getCauseById,
+    generateOTP,
+    verifyOTP
 } = require('../controllers/claimController');
 
 /**
@@ -13,7 +15,11 @@ const {
  * @desc    Verify a user's identity before allowing bag claim
  * @access  Public
  */
-router.post('/verify-user', protect, publicOnly, verifyUser);
+
+
+router.post('/generate-otp', generateOTP);
+
+router.post('/verify-otp', verifyOTP);
 
 /**
  * @route   GET /api/v1/claimer/cause/info/:causeId
